@@ -48,7 +48,7 @@ To cite this repository in publications:
 
 ```
 @misc{mcp-course,
-  author = Burtenshaw, Ben,
+  author = {Burtenshaw, Ben and Notov, Alex},
   title = {The Model Context Protocol Course},
   year = {2025},
   howpublished = {\url{https://github.com/huggingface/mcp-course}},

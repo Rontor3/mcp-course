@@ -9,7 +9,9 @@ like Ollama.
 You can install Continue from the VS Code marketplace.
 
 <Tip>
+
 *Continue also has an extension for [JetBrains](https://plugins.jetbrains.com/plugin/22707-continue).*
+
 </Tip>
 
 ### VS Code extension
@@ -22,46 +24,112 @@ You can install Continue from the VS Code marketplace.
 
 With Continue configured, we'll move on to setting up Ollama to pull local models. 
 
-### Ollama local models
+### Local Models
 
-Ollama is an open-source tool that allows users to run large language models (LLMs)
-locally on their own computers. To use Ollama, you can [install](https://ollama.com/download) it and
-download the model you want to run with the `ollama pull` command.
+There are many ways to run local models that are compatible with Continue. Three popular options are Ollama, Llama.cpp, and LM Studio. Ollama is an open-source tool that allows users to easily run large language models (LLMs) locally. Llama.cpp is a high-performance C++ library for running LLMs that also includes an OpenAI-compatible server. LM Studio provides a graphical interface for running local models.
 
-For example, you can download the [llama 3.1:8b](https://ollama.com/models/llama-3:1b) model with:
+
+You can access local models from the Hugging Face Hub and get commands and quick links for all major local inference apps.
+
+![hugging face hub](https://cdn-uploads.huggingface.co/production/uploads/64445e5f1bc692d87b27e183/d6XMR5q9DwVpdEKFeLW9t.png)
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+
+Llama.cpp provides `llama-server`, a lightweight, OpenAI API compatible, HTTP server for serving LLMs. You can either build it from source by following the instructions in the [Llama.cpp repository](https://github.com/ggml-org/llama.cpp), or use a pre-built binary if available for your system. Check out the [Llama.cpp documentation](https://github.com/ggerganov/llama.cpp) for more information.
+
+Once you have `llama-server`, you can run a model from Hugging Face with a command like this:
 
 ```bash
-ollama pull llama3.1:8b
+llama-server -hf unsloth/Devstral-Small-2505-GGUF:Q4_K_M
 ```
-<Tip>
-It is possible
-to use other local model provides, like [Llama.cpp](https://docs.continue.dev/customize/model-providers/more/llamacpp), and [LLmstudio](https://docs.continue.dev/customize/model-providers/more/lmstudio) by updating the
-model provider in the configuration files below. However, Continue has been
-tested with Ollama and it is recommended to use it for the best experience.
 
-Details on all available model providers can be found in the [Continue documentation](https://docs.continue.dev/customize/model-providers).
+</hfoption>
+<hfoption id="lmstudio">
+LM Studio is an application for Mac, Windows, and Linux that makes it easy to run open-source models locally with a graphical interface. To get started:
+
+1.  [Click here to open the model in LM Studio](lmstudio://open_from_hf?model=unsloth/Devstral-Small-2505-GGUF).
+2.  Once the model is downloaded, go to the "Local Server" tab and click "Start Server".
+</hfoption>
+<hfoption id="ollama">
+To use Ollama, you can [install](https://ollama.com/download) it and download the model you want to run with the `ollama run` command.
+
+For example, you can download and run the [Devstral-Small](https://huggingface.co/unsloth/Devstral-Small-2505-GGUF?local-app=ollama) model with:
+
+```bash
+ollama run unsloth/devstral-small-2505-gguf:Q4_K_M
+```
+</hfoption>
+</hfoptions>
+
+<Tip>
+
+Continue supports various local model providers. Besides Ollama, Llama.cpp, and LM Studio you can also use other providers. For a complete list of supported providers and detailed configuration options, please refer to the [Continue documentation](https://docs.continue.dev/customize/model-providers).
+
 </Tip>
 
 It is important that we use models that have tool calling as a built-in feature, i.e. Codestral Qwen and Llama 3.1x.
 
 1. Create a folder called `.continue/models` at the top level of your workspace
-2. Add a file called `llama-max.yaml` to this folder
-3. Write the following contents to `llama-max.yaml` and save
+2. Add a file to this folder to configure your model provider. For example, `local-models.yaml`.
+3. Add the following configuration, depending on whether you are using Ollama, Llama.cpp, or LM Studio.
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+This configuration is for a `llama.cpp` model served with `llama-server`. Note that the `model` field should match the model you are serving.
 
 ```yaml
-name: Ollama Llama model
+name: Llama.cpp model
 version: 0.0.1
 schema: v1
 models:
-  - provider: ollama
-    model: llama3.1:8b
+  - provider: llama.cpp
+    model: unsloth/Devstral-Small-2505-GGUF
+    apiBase: http://localhost:8080
     defaultCompletionOptions:
-      contextLength: 128000
-    name: a llama3.1:8b max
+      contextLength: 8192 # Adjust based on the model
+    name: Llama.cpp Devstral-Small
     roles:
       - chat
       - edit
 ```
+</hfoption>
+<hfoption id="lmstudio">
+This configuration is for a model served via LM Studio. The model identifier should match what is loaded in LM Studio.
+
+```yaml
+name: LM Studio Model
+version: 0.0.1
+schema: v1
+models:
+  - provider: lmstudio
+    model: unsloth/Devstral-Small-2505-GGUF
+    name: LM Studio Devstral-Small
+    apiBase: http://localhost:1234/v1
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+<hfoption id="ollama">
+This configuration is for an Ollama model.
+
+```yaml
+name: Ollama Devstral model
+version: 0.0.1
+schema: v1
+models:
+  - provider: ollama
+    model: unsloth/devstral-small-2505-gguf:Q4_K_M
+    defaultCompletionOptions:
+      contextLength: 8192
+    name: Ollama Devstral-Small
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+</hfoptions>
 
 By default, each model has a max context length, in this case it is `128000` tokens. This setup includes a larger use of
 that context window to perform multiple MCP requests and needs to be able to handle more tokens.
