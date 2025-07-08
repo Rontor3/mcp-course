@@ -51,7 +51,7 @@ app = web.Application()
 app.router.add_post('/webhook/github', handle_webhook)
 
 if __name__ == '__main__':
-    print("🚀 Starting webhook server on http://localhost:8080")
+    print("🚀 Starting webhook server on http://localhost:8081")
     print("📝 Events will be saved to:", EVENTS_FILE)
-    print("🔗 Webhook URL: http://localhost:8080/webhook/github")
-    web.run_app(app, host='localhost', port=8080)
+    print("🔗 Webhook URL: http://localhost:8081/webhook/github")
+    web.run_app(app, host='localhost', port=8081)

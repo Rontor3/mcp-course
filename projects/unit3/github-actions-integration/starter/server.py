@@ -19,6 +19,7 @@ mcp = FastMCP("pr-agent-actions")
 # PR template directory (shared between starter and solution)
 TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
 
+print('Done')
 # Default PR templates
 DEFAULT_TEMPLATES = {
     "bug.md": "Bug Fix",
@@ -31,7 +32,7 @@ DEFAULT_TEMPLATES = {
 }
 
 # TODO: Add path to events file where webhook_server.py stores events
-# Hint: EVENTS_FILE = Path(__file__).parent / "github_events.json"
+EVENTS_FILE = Path(__file__).parent / "github_events.json"
 
 # Type mapping for PR templates
 TYPE_MAPPING = {
@@ -186,8 +187,12 @@ async def get_recent_actions_events(limit: int = 10) -> str:
     # 2. Read the JSON file
     # 3. Return the most recent events (up to limit)
     # 4. Return empty list if file doesn't exist
-    
-    return json.dumps({"message": "TODO: Implement get_recent_actions_events"})
+    if EVENTS_FILE.exists():
+        with open(EVENTS_FILE, "r") as f:
+            events = json.load(f)
+        return json.dumps(events[-limit:])
+    else:
+        return json.dumps({"message": "No events found"})
 
 
 @mcp.tool()
@@ -204,7 +209,33 @@ async def get_workflow_status(workflow_name: Optional[str] = None) -> str:
     # 4. Group by workflow and show latest status
     # 5. Return formatted workflow status information
     
-    return json.dumps({"message": "TODO: Implement get_workflow_status"})
+    try:
+        with open(EVENTS_FILE, 'r') as f:
+            events = json.load(f)
+    except FileNotFoundError:
+        return json.dumps({"message": "No GitHub Actions events received yet"})
+    
+    # Filter for workflow events
+    workflow_events = [
+        e for e in events 
+        if e.get("workflow_run") is not None
+    ]
+    
+    if workflow_name:
+        workflow_events = [
+            e for e in workflow_events
+            if e["workflow_run"].get("name") == workflow_name
+        ]
+    
+    # Group by workflow and get latest status
+    workflows = {}
+    for event in workflow_events:
+        run = event["workflow_run"]
+        name = run["name"]
+        if name not in workflows or run["updated_at"] > workflows[name]["updated_at"]:
+            workflows[name] = run
+    
+    return json.dumps(list(workflows.values()), indent=2)
 
 
 # ===== Module 2: MCP Prompts =====
@@ -218,7 +249,17 @@ async def analyze_ci_results():
     # 2. Use get_workflow_status()
     # 3. Analyze results and provide insights
     
-    return "TODO: Implement analyze_ci_results prompt"
+    return """Analyze recent ci/cd results from github actions:
+            1. Call get_recent_actions_events tool and get the most recent events
+            2. Call get_workflow_status tool and get the status of the workflows
+            3. Analyze the results and provide insights
+            Format your response as:
+## CI/CD Status Summary
+- **Overall Health**: [Good/Warning/Critical]
+- **Failed Workflows**: [List any failures with links]
+- **Successful Workflows**: [List recent successes]
+- **Recommendations**: [Specific actions to take]
+- **Trends**: [Any patterns you notice]"""
 
 
 @mcp.prompt()
@@ -227,7 +268,24 @@ async def create_deployment_summary():
     # TODO: Implement this prompt
     # Return a string that guides Claude to create a deployment summary
     
-    return "TODO: Implement create_deployment_summary prompt"
+    return  """ Create a deployment summary for team communication:
+
+1. Check workflow status with get_workflow_status()
+2. Look specifically for deployment-related workflows
+3. Note the deployment outcome, timing, and any issues
+
+Format as a concise message suitable for Slack:
+
+🚀 **Deployment Update**
+- **Status**: [✅ Success / ❌ Failed / ⏳ In Progress]
+- **Environment**: [Production/Staging/Dev]
+- **Version/Commit**: [If available from workflow data]
+- **Duration**: [If available]
+- **Key Changes**: [Brief summary if available]
+- **Issues**: [Any problems encountered]
+- **Next Steps**: [Required actions if failed]
+
+Keep it brief but informative for team awareness."""
 
 
 @mcp.prompt()
@@ -236,7 +294,12 @@ async def generate_pr_status_report():
     # TODO: Implement this prompt
     # Return a string that guides Claude to combine code changes with CI/CD status
     
-    return "TODO: Implement generate_pr_status_report prompt"
+    return """"Generate a comprehensive PR status report:
+
+1. Use analyze_file_changes() to understand what changed
+2. Use get_workflow_status() to check CI/CD status
+3. Use suggest_template() to recommend the appropriate PR template
+4. Combine all information into a cohesive report"""
 
 
 @mcp.prompt()
@@ -245,7 +308,13 @@ async def troubleshoot_workflow_failure():
     # TODO: Implement this prompt
     # Return a string that guides Claude through troubleshooting steps
     
-    return "TODO: Implement troubleshoot_workflow_failure prompt"
+    return  """Help troubleshoot failing GitHub Actions workflows:
+
+1. Use get_recent_actions_events() to find recent failures
+2. Use get_workflow_status() to see which workflows are failing
+3. Analyze the failure patterns and timing
+4. Provide systematic troubleshooting steps
+"""
 
 
 if __name__ == "__main__":
