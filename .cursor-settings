@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "pr-agent": {
+      "command": "python",
+      "args": ["server.py"],
+      "cwd": "projects/unit3/build-mcp-server/starter"
+    }
+  }
+} 

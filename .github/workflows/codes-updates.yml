@@ -1,0 +1,23 @@
+name: Code Update Check
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  update-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show event type and branch
+        run: |
+          echo "🔁 Event: ${{ github.event_name }}"
+          echo "🌿 Branch: ${{ github.ref }}"
+
+      - name: Done
+        run: echo "✅ Push or PR triggered this workflow"

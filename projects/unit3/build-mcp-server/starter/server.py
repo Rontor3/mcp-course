@@ -18,6 +18,20 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+print("====================================================")
+print("Current working directory:", os.getcwd())
+print("lowokowkgo")
+
+import subprocess
+
+def print_changed_files():
+    try:
+        result = subprocess.check_output(["git", "diff", "--name-status"]).decode()
+        print("Changed files:\n" + result)
+    except Exception as e:
+        print("Error checking changed files:", e)
+
+print_changed_files()
 # Initialize the FastMCP server
 mcp = FastMCP("pr-agent")
 
